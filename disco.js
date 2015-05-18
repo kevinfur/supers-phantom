@@ -50,8 +50,8 @@ var links = page.evaluate(function() {
 
 // HTML del primer producto
 var resultadoCategoria = page.evaluate(function() {
-		    return $($(".filaListaDetalle")[0]).text().replace(/	/g,'').replace(/(?:\r\n|\r|\n)/g, '');
-		});
+    return $($(".filaListaDetalle")[0]).text().replace(/	/g,'').replace(/(?:\r\n|\r|\n)/g, '');
+});
 
 if (links){
 	for (var i=0; i<links.length;i++){	
@@ -86,15 +86,23 @@ if (links){
 		    return $($(".filaListaDetalle")[0]).text().replace(/	/g,'').replace(/(?:\r\n|\r|\n)/g, '');
 		});
 
-		var nombre = page.evaluate(function() {
-		    return $(".link-lista2", $(".filaListaDetalle")[0]).text().replace(/(?:\r\n|\r|\n)/g, '');
-		});
-		var precio = page.evaluate(function() {
-			var n = $($(".filaListaDetalle")[0]).text();
-		    return n.substring(n.indexOf('Unidades')+8, n.length).substring(0, n.indexOf(' ')).replace(/	/g,'').replace(/(?:\r\n|\r|\n)/g, '');
-		});		
 
-		console.log("Nombre: " + nombre + " | Precio: " + precio);
+		// Link a siguitente pagina $('a:contains(">>")')[0]
+		// hacerle click hasta que no aparezca mas
+
+		var cantProductosEnPagina = page.evaluate(function() {
+		    return $(".filaListaDetalle").length;
+		});
+		for (var j=0; j<cantProductosEnPagina;j++){	
+			var nombre = page.evaluate(function(indice) {
+			    return $(".link-lista2", $(".filaListaDetalle")[indice]).text().replace(/(?:\r\n|\r|\n)/g, '');
+			}, j);
+			var precio = page.evaluate(function(indice) {
+				var n = $($(".filaListaDetalle")[indice]).text();
+			    return n.substring(n.indexOf('Unidades')+8, n.length).substring(0, n.indexOf(' ')).replace(/	/g,'').replace(/(?:\r\n|\r|\n)/g, '');
+			}, j);	
+			console.log("Nombre: " + nombre + " | Precio: " + precio);
+		}		
 
 	}
 }else {

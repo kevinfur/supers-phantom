@@ -1,12 +1,25 @@
 var page = require('webpage').create();
 
-function sleep(milliseconds) {
-  var start = new Date().getTime();
-  for (var i = 0; i < 1e7; i++) {
-    if ((new Date().getTime() - start) > milliseconds){
-      break;
-    }
-  }
+function getProductsFromCurrentPage(){
+	var cantProductosEnPagina = page.evaluate(function() {
+	    return $(".filaListaDetalle").length;
+	});
+	for (var j=0; j<cantProductosEnPagina;j++){	
+		var nombre = page.evaluate(function(indice) {
+		    return $(".link-lista2", $(".filaListaDetalle")[indice]).text().replace(/(?:\r\n|\r|\n)/g, '');
+		}, j);
+		var precio = page.evaluate(function(indice) {
+			var n = $($(".filaListaDetalle")[indice]).text();
+		    return n.substring(n.indexOf('Unidades')+8, n.length).substring(0, n.indexOf(' ')).replace(/	/g,'').replace(/(?:\r\n|\r|\n)/g, '');
+		}, j);	
+		console.log("Nombre: " + nombre + " | Precio: " + precio);
+	}		
+}
+
+function isNextLinkEnabled(){
+	return page.evaluate(function() {
+	    return $('a:contains(">>")').length > 0;
+	});	
 }
 
 page.onError = function(msg, trace) {
@@ -86,22 +99,24 @@ if (links){
 		    return $($(".filaListaDetalle")[0]).text().replace(/	/g,'').replace(/(?:\r\n|\r|\n)/g, '');
 		});
 
+		// Hace click al next hasta que no aparezca mas habilitado
+		getProductsFromCurrentPage();
+		while (isNextLinkEnabled()){
+			page.evaluate(function() {
+			    $('a:contains(">>")')[0].click();
+			});
 
-		// Link a siguitente pagina $('a:contains(">>")')[0]
-		// hacerle click hasta que no aparezca mas
+			// Espero que carguen los resultados		
+			do { phantom.page.sendEvent('mousemove');  } while (
+				page.evaluate(function() {return $("#ctl00_hlLogoDiscoVirtual img").attr("src") == "https://www3.discovirtual.com.ar/_Imgs/logo_home_animado.gif" }) 
+				||
+				page.evaluate(function(str) {return $($(".filaListaDetalle")[0]).text().replace(/	/g,'').replace(/(?:\r\n|\r|\n)/g, '') == str}, resultadoCategoria)
+			);
+			resultadoCategoria = page.evaluate(function() {
+			    return $($(".filaListaDetalle")[0]).text().replace(/	/g,'').replace(/(?:\r\n|\r|\n)/g, '');
+			});
 
-		var cantProductosEnPagina = page.evaluate(function() {
-		    return $(".filaListaDetalle").length;
-		});
-		for (var j=0; j<cantProductosEnPagina;j++){	
-			var nombre = page.evaluate(function(indice) {
-			    return $(".link-lista2", $(".filaListaDetalle")[indice]).text().replace(/(?:\r\n|\r|\n)/g, '');
-			}, j);
-			var precio = page.evaluate(function(indice) {
-				var n = $($(".filaListaDetalle")[indice]).text();
-			    return n.substring(n.indexOf('Unidades')+8, n.length).substring(0, n.indexOf(' ')).replace(/	/g,'').replace(/(?:\r\n|\r|\n)/g, '');
-			}, j);	
-			console.log("Nombre: " + nombre + " | Precio: " + precio);
+			getProductsFromCurrentPage();
 		}		
 
 	}

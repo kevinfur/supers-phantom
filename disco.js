@@ -10,7 +10,7 @@ function getProductsFromCurrentPage(){
 		}, j);
 		var precio = page.evaluate(function(indice) {
 			var n = $($(".filaListaDetalle")[indice]).text();
-		    return n.substring(n.indexOf('Unidades')+8, n.length).substring(0, n.indexOf(' ')).replace(/	/g,'').replace(/(?:\r\n|\r|\n)/g, '');
+		    return n.substring(n.lastIndexOf('$'), n.length).substring(0, n.indexOf(' ')).replace(/	/g,'').replace(/(?:\r\n|\r|\n)/g, '');
 		}, j);	
 		console.log("Nombre: " + nombre + " | Precio: " + precio);
 	}		
@@ -34,6 +34,8 @@ page.onError = function(msg, trace) {
     // console.error(msgStack.join('\n'));
 };
 
+console.log(new Date().toString());
+
 console.log("Abro pagina");
 page.open('https://www3.discovirtual.com.ar/Login/PreHome.aspx');
 
@@ -53,9 +55,9 @@ var categories = page.evaluate(function() {
 var cat = categories[0];
 */
 
-//Obtengo links de cada gondola
+//Obtengo links de todas las gondolas
 var links = page.evaluate(function() {
-    return [].map.call(document.querySelectorAll("#divGrupo1 .tM")[0].querySelectorAll("a[href^='javascript:VerGon']"), function(link) {
+    return [].map.call(document.querySelectorAll("a[href^='javascript:VerGon']"), function(link) {
         return link.getAttribute('href');
     });
 });
@@ -124,6 +126,7 @@ if (links){
 	console.log("links es null");
 }
 
+console.log(new Date().toString());
 phantom.exit();
 
 

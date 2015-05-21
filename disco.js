@@ -22,6 +22,26 @@ function isNextLinkEnabled(){
 	});	
 }
 
+function clickLinkGondola(linkToClick){
+	page.evaluate(function(l) {
+		//window.location.href=links[i]
+
+		var linkPart = l.substring(0,l.indexOf("'"));
+
+		var element = [].map.call(document.querySelectorAll("a[href^='"+linkPart+"']"), function(link) {
+	        return link;
+	    })[0];
+
+	    // create a mouse click event
+	    var event = document.createEvent( 'MouseEvents' );
+	    event.initMouseEvent( 'click', true, true, window, 1, 0, 0 );
+	 
+	    // send click to element
+	    element.dispatchEvent( event );		
+
+	}, linkToClick);
+}
+
 page.onError = function(msg, trace) {
     var msgStack = ['ERROR: ' + msg];
     if (trace && trace.length) {
@@ -73,26 +93,18 @@ if (links){
 		//console.log(links[i]);
 
 		// Click del link, si no obtengo el link de nuevo no funca
-		page.evaluate(function(l) {
-			//window.location.href=links[i]
+		clickLinkGondola(links[i]);
 
-			var linkPart = l.substring(0,l.indexOf("'"));
-
-			var element = [].map.call(document.querySelectorAll("a[href^='"+linkPart+"']"), function(link) {
-		        return link;
-		    })[0];
- 
-		    // create a mouse click event
-		    var event = document.createEvent( 'MouseEvents' );
-		    event.initMouseEvent( 'click', true, true, window, 1, 0, 0 );
-		 
-		    // send click to element
-		    element.dispatchEvent( event );		
-
-		}, links[i]);
-
-		// Espero que carguen los resultados		
-		do { phantom.page.sendEvent('mousemove');  } while (
+		// Espero que carguen los resultados	
+		var start = Date.now();	
+		do { 
+			phantom.page.sendEvent('mousemove');  
+			if ((Date.now() - start) > 10000){
+				console.log("max time 1");
+				start = Date.now();	
+				clickLinkGondola(links[i]);
+			}
+		} while (
 			page.evaluate(function() {return $("#ctl00_hlLogoDiscoVirtual img").attr("src") == "https://www3.discovirtual.com.ar/_Imgs/logo_home_animado.gif" }) 
 			||
 			page.evaluate(function(str) {return $($(".filaListaDetalle")[0]).text().replace(/	/g,'').replace(/(?:\r\n|\r|\n)/g, '') == str}, resultadoCategoria)
@@ -109,7 +121,17 @@ if (links){
 			});
 
 			// Espero que carguen los resultados		
-			do { phantom.page.sendEvent('mousemove');  } while (
+			var start = Date.now();
+			do { 
+				phantom.page.sendEvent('mousemove');  
+				if ((Date.now() - start) > 10000){
+					console.log("max time 2");
+					start = Date.now();	
+					page.evaluate(function() {
+					    $('a:contains(">>")')[0].click();
+					});
+				}
+			} while (
 				page.evaluate(function() {return $("#ctl00_hlLogoDiscoVirtual img").attr("src") == "https://www3.discovirtual.com.ar/_Imgs/logo_home_animado.gif" }) 
 				||
 				page.evaluate(function(str) {return $($(".filaListaDetalle")[0]).text().replace(/	/g,'').replace(/(?:\r\n|\r|\n)/g, '') == str}, resultadoCategoria)

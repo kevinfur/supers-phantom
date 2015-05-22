@@ -1,4 +1,9 @@
 var page = require('webpage').create();
+var fs = require('fs');
+
+var path = 'disco.json';
+
+var continueNextCategory = false;
 
 function getProductsFromCurrentPage(){
 	var cantProductosEnPagina = page.evaluate(function() {
@@ -13,6 +18,16 @@ function getProductsFromCurrentPage(){
 		    return n.substring(n.lastIndexOf('$'), n.length).substring(0, n.indexOf(' ')).replace(/	/g,'').replace(/(?:\r\n|\r|\n)/g, '');
 		}, j);	
 		console.log("Nombre: " + nombre + " | Precio: " + precio);
+		var separator = (j != (cantProductosEnPagina-1)) ? ',' : '';
+		try {
+			fs.write(path, "{\"name\": \"" + nombre.trim() + "\", \"price\": " + precio.replace('$','') + "}"+separator, 'a');
+		} catch(e) {
+		    console.log(e);
+		}
+
+		if (j == (cantProductosEnPagina-1)){
+			continueNextCategory = true;
+		}
 	}		
 }
 
@@ -23,7 +38,7 @@ function isNextLinkEnabled(){
 }
 
 function clickLinkGondola(linkToClick){
-	page.evaluate(function(l) {
+	return page.evaluate(function(l) {
 		//window.location.href=links[i]
 
 		var linkPart = l.substring(0,l.indexOf("'"));
@@ -38,6 +53,8 @@ function clickLinkGondola(linkToClick){
 	 
 	    // send click to element
 	    element.dispatchEvent( event );		
+
+	    return document.querySelector("a[href^='"+linkPart+"']").textContent;
 
 	}, linkToClick);
 }
@@ -88,12 +105,27 @@ var resultadoCategoria = page.evaluate(function() {
     return $($(".filaListaDetalle")[0]).text().replace(/	/g,'').replace(/(?:\r\n|\r|\n)/g, '');
 });
 
+try {
+	fs.write(path, "{", 'a');
+} catch(e) {
+    console.log(e);
+}
 if (links){
 	for (var i=0; i<links.length;i++){	
 		//console.log(links[i]);
 
+		continueNextCategory = false;
+
 		// Click del link, si no obtengo el link de nuevo no funca
-		clickLinkGondola(links[i]);
+		var nombreSubcategoria = clickLinkGondola(links[i]);
+
+		console.log(nombreSubcategoria);
+
+		try {
+			fs.write(path, "{\"name\": \"" + nombreSubcategoria.trim() + "\", \"products\": [", 'a');
+		} catch(e) {
+		    console.log(e);
+		}
 
 		// Espero que carguen los resultados	
 		var start = Date.now();	
@@ -143,9 +175,23 @@ if (links){
 			getProductsFromCurrentPage();
 		}		
 
+		do { phantom.page.sendEvent('mousemove'); } while ( !continueNextCategory );
+
+		var separator = (i != (links.length-1)) ? ',' : '';
+		try {
+			fs.write(path, "]}"+separator, 'a');
+		} catch(e) {
+		    console.log(e);
+		}
+
 	}
 }else {
 	console.log("links es null");
+}
+try {
+	fs.write(path, "}", 'a');
+} catch(e) {
+    console.log(e);
 }
 
 console.log(new Date().toString());
